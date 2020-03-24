@@ -9,6 +9,7 @@ function load(authParams) {
 }
 function* loadData(action) {
   try {
+    yield put({type:'LOAD_DATA_INIT'})
     const data =yield call(load,action.data)    
     yield put({
       type: 'LOAD_DATA_SUCCESS',

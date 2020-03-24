@@ -1,11 +1,11 @@
 // Imports: Dependencies
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import { TextInput,Image, FlatList, SafeAreaView, StyleSheet,Dimensions, Text, TouchableOpacity, View,ActivityIndicator } from 'react-native';
 import { connect } from 'react-redux';
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
-
-class ListScreen extends React.Component {
+import Spinner from 'react-native-loading-spinner-overlay';
+class ListScreen extends React.PureComponent {
   constructor(props)
   {
       super(props);
@@ -15,8 +15,11 @@ class ListScreen extends React.Component {
   }
   OnTextChange(e)
   {
-      this.setState({searchtxt:e})
-      
+      this.setState({searchtxt:e});
+      if(e =="")
+      {
+        this.props.resetDate();
+      }
   }
   fetchResult()
   {
@@ -29,6 +32,11 @@ class ListScreen extends React.Component {
   render() {
     return (
       <SafeAreaView style={styles.container}>
+        <Spinner
+          visible={this.props.loadingstatus}
+          textContent={'Loading...'}
+          textStyle={styles.spinnerTextStyle}
+        />
         <View style={styles.searchcontainer}>
             <View style={styles.searchtxtcontainer}><TextInput value={this.state.searchtxt} onChangeText={(e)=>{this.OnTextChange(e)}}/></View>
             <TouchableOpacity style={styles.searchbtncontainer} onPress={()=>{this.props.searchFilter(this.state.searchtxt)}}>
@@ -36,7 +44,7 @@ class ListScreen extends React.Component {
         </View>
         
       <View style={styles.ListStyle}>
-            <FlatList
+            {this.props.data.length >0 ?<FlatList
             style={{ flex: 1,width:"100%"}}
             extraData={this.state}
             onEndReached={()=>this.fetchResult()}
@@ -45,7 +53,8 @@ class ListScreen extends React.Component {
             renderItem={rowData => {return (
                <View  style={{ flexDirection:"row",padding:5,borderBottomWidth:0.3,borderBottomColor:'grey'}}>
                <View style={{marginHorizontal:5}}>
-                <Image style={{width:60,height:60,borderRadius:5}} source={{uri:rowData.item.thumbnailUrl}} alt="Profile pic"/>
+                <Image style={{width:60,height:60,borderRadius:5}} source={{uri:rowData.item.thumbnailUrl,
+    cache: 'only-if-cached',}} />
                </View>
                < View style={{marginHorizontal:5,width:windowWidth-95}}>
                   <Text style={{fontSize:16}}>{rowData.item.title}</Text>
@@ -54,7 +63,7 @@ class ListScreen extends React.Component {
 
             )}}
             keyExtractor={item => item.id.toString()}
-        />
+        />:<View style={{alignItems:"center",flex:1,justifyContent:"center"}}><Text>No Data Found.</Text></View> }
         </View>
         
        
@@ -64,6 +73,9 @@ class ListScreen extends React.Component {
 }
 
 const styles = StyleSheet.create({
+  spinnerTextStyle: {
+    color: '#FFF'
+  },
   container: {
     flex: 1,
     justifyContent: 'flex-start',
@@ -108,6 +120,7 @@ const styles = StyleSheet.create({
 const mapStateToProps = (state) => {  
   return {
     data: state.list.data,
+    loadingstatus:state.list.loadingstatus
   };
 };
 const mapDispatchToProps = (dispatch) => { 
@@ -122,6 +135,9 @@ const mapDispatchToProps = (dispatch) => {
       data: {offset:offset,
       limit:limit}
     }),
+    resetDate:() => dispatch({
+      type:'SEARCH_FILTER_RESET'
+    })
   };
 };
 
